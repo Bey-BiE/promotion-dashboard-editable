@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="th"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Promotion Auto Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#ffffff;color:#211d19;font-family:Arial,"Noto Sans Thai",sans-serif}
+:root{--bg:#ffffff;--panel:#faf9f7;--border:#e2ddd5;--muted:#7a7168;--accent:#c9820f;--green:#3f7a3a;--red:#c95b46}
+.app{max-width:1180px;margin:auto;padding:28px 22px 55px}.head{display:flex;justify-content:space-between;gap:25px;align-items:flex-start}
+.eyebrow{font-size:12px;letter-spacing:2px;font-weight:bold;color:var(--accent);margin-bottom:12px}h1{font-size:30px;line-height:1.25;margin:0 0 8px}.desc{font-size:14px;color:var(--muted);line-height:1.6}
+.price{background:var(--panel);border:1px solid var(--border);border-radius:15px;padding:17px 24px;min-width:230px;text-align:center}.old{text-decoration:line-through;color:#9a9188}.arrow{margin:0 10px;color:#9a9188}.new{font-size:28px;font-weight:850;color:var(--accent)}.unit{font-size:12px;color:var(--muted)}
+.divider{height:1px;background:var(--border);margin:25px 0 27px}.toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:17px}
+.upload{flex:1;min-width:300px;border:1px dashed #cbc4ba;background:#fdfcfa;border-radius:13px;padding:16px;cursor:pointer}.upload:hover{border-color:var(--accent)}.upload input{display:none}
+.uploadrow{display:flex;align-items:center;gap:13px}.uploadicon{font-size:28px}.uploadtitle{font-weight:bold}.uploadsub{font-size:12px;color:var(--muted);margin-top:4px}
+button{border:1px solid var(--border);background:var(--panel);color:#211d19;border-radius:10px;padding:11px 16px;font-weight:bold;cursor:pointer}button:hover{border-color:var(--accent)}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.panel,.card{background:var(--panel);border:1px solid var(--border);border-radius:15px}.panel{padding:20px;margin-bottom:17px}.ptitle{font-size:17px;font-weight:800;margin-bottom:13px}
+.settings{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;background:#ffffff;border:1px solid var(--border);border-radius:9px;color:#211d19;padding:10px;font:inherit}.field textarea{min-height:70px;resize:vertical}.wide{grid-column:span 2}
+.filters{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.filterlabel{font-size:12px;color:var(--muted);margin-bottom:6px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:0 0 27px}.card{padding:18px}.label{font-size:12px;color:var(--muted);margin-bottom:11px}.value{font-size:25px;font-weight:850}.sub{font-size:12px;color:var(--muted);margin-top:7px}
+.chartbox{height:370px;overflow:auto}.chart{min-width:760px;height:100%}.empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.grid{stroke:#ece8e1;stroke-width:1}.axis{fill:#7a7168;font-size:11px}.bar{fill:var(--accent);opacity:.88}.target{stroke:var(--red);stroke-width:2;stroke-dasharray:7 5}
+.two{display:grid;grid-template-columns:1.5fr .85fr;gap:17px}.hint{font-size:12px;color:var(--muted);line-height:1.6}.status{color:var(--green);margin-top:6px}.error{color:#c0452f}
+.row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #ece8e1;font-size:13px}.row:last-child{border-bottom:0}
+.tablewrap{overflow:auto;max-height:330px}.table{border-collapse:collapse;width:100%;font-size:12px}.table th,.table td{padding:9px;border-bottom:1px solid #ece8e1;text-align:left;white-space:nowrap}.table th{color:var(--muted);position:sticky;top:0;background:var(--panel)}
+@media(max-width:900px){.head{flex-direction:column}.price{width:100%}.cards{grid-template-columns:repeat(2,1fr)}.settings,.filters{grid-template-columns:1fr}.wide{grid-column:auto}.two{grid-template-columns:1fr}}
+@media(max-width:500px){.app{padding:20px 12px}.cards{grid-template-columns:1fr}h1{font-size:25px}}
+
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{background:#ffffff}
+.adm{display:none}body.admin .adm{display:block}body.admin .adm.flex{display:flex}
+.pubonly{display:block}body.admin .pubonly{display:none}
+.adminbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:#fff7ea;border-bottom:1px solid var(--accent);padding:10px 22px;align-items:center;gap:12px;flex-wrap:wrap}
+.badge{font-size:12px;font-weight:bold;padding:5px 11px;border-radius:99px;background:#ece8e1;color:#5a524a}.badge.on{background:#dcefd9;color:#2d6128}
+.spacer{flex:1}.btn-pub{background:var(--green);border-color:var(--green);color:#fff}.btn-off{background:var(--red);border-color:var(--red);color:#fff}
+.danger{color:#c0452f}.priv{display:none;min-height:80vh;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:30px}body.private .priv{display:flex}body.private .app{display:none}
+.table input{background:#ffffff;border:1px solid var(--border);border-radius:6px;color:#211d19;padding:5px 6px;width:100px;font:inherit}.table input.w{width:170px}.table button{padding:4px 9px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.note{font-size:12px;color:var(--muted);margin-left:auto}
+.gate{display:none;position:fixed;right:14px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:20;font-size:12px;padding:8px 13px;opacity:.85}
+body:not(.admin) .gate{display:block}.gatemsg{position:fixed;right:14px;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:20;max-width:260px;background:#fff7ea;border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:12px;display:none}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.chip{display:flex;align-items:center;gap:4px;background:#ffffff;border:1px solid var(--border);border-radius:99px;padding:3px 5px 3px 12px}.chip input{width:150px;border:0;background:transparent;color:#211d19;padding:4px;font:inherit}.chip button{padding:2px 9px;border-radius:99px}
+.mrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.mrow input{flex:1;min-width:200px;background:#ffffff;border:1px solid var(--border);border-radius:9px;color:#211d19;padding:10px;font:inherit}.table select{background:#ffffff;border:1px solid var(--border);border-radius:6px;color:#211d19;padding:5px 6px;max-width:210px;font:inherit}.field input:disabled,.field textarea:disabled{opacity:.45}
+
+.modal{display:none;position:fixed;inset:0;background:rgba(33,29,25,.45);z-index:50;align-items:center;justify-content:center;padding:20px}.modal.show{display:flex}
+.mbox{background:#fff;border-radius:15px;padding:22px;width:100%;max-width:340px}.mbox h3{margin:0 0 6px}.mbox input{width:100%;margin:8px 0 0;padding:10px;border:1px solid var(--border);border-radius:9px;font:inherit}.mbox .error{min-height:18px;font-size:12px;margin-top:8px}
+</style>
+</head>
+<body>
+<button class="gate" id="gate">🔐 หลังบ้าน</button><div class="gatemsg" id="gateMsg">เฉพาะเจ้าของเท่านั้น — เปิดลิงก์นี้ด้วยบัญชีเจ้าของใน claude.ai เพื่อเข้าหลังบ้าน</div>
+<div class="adminbar adm flex">
+<strong>🛠 โหมดแก้ไข</strong><span class="badge on" id="pubBadge">ทุกคนที่มีไฟล์นี้แก้ไขได้</span>
+<span class="hint" id="saveMsg"></span><span class="spacer"></span>
+<button id="viewBtn">👁 ดูหน้าบ้าน</button><button id="pwBtn">🔑 เปลี่ยนรหัส</button><button id="logoutBtn">ออกจากระบบ</button><button id="resetBtn">↺ รีเซ็ต</button>
+<button id="saveBtn" class="primary">💾 บันทึกในเครื่อง</button>
+<button id="pubBtn" class="btn-pub">⬇ ดาวน์โหลด HTML</button>
+</div>
+<div class="modal" id="loginModal"><div class="mbox"><h3 id="lmTitle"></h3><div class="hint" id="lmHint"></div>
+<input type="password" id="lmPass" placeholder="รหัสผ่าน" autocomplete="off"><input type="password" id="lmPass2" placeholder="ยืนยันรหัสผ่าน" autocomplete="off">
+<div class="error" id="lmErr"></div><div class="actions"><button class="primary" id="lmOk">ตกลง</button><button id="lmCancel">ยกเลิก</button></div></div></div>
+<div class="priv" id="priv"><div><div style="font-size:42px">🔒</div><h2>หน้านี้ยังไม่เปิดเป็น Public</h2><div>กรุณารอเจ้าของเปิดให้เข้าชม</div></div></div>
+
+<div class="app">
+<div class="head">
+<div>
+<div class="eyebrow" id="brand">AUNGPUNG BAKERY · PROMOTION</div>
+<h1 id="title">ຜົນການຂາຍ ໂປຣໂມຊັນ</h1>
+<div class="desc" id="desc">นำ Excel Promotion เข้าไป ระบบจะรวมข้อมูลทุก Sheet และประมวลผลเป็น Dashboard อัตโนมัติ</div>
+</div>
+<div class="price"><span class="old" id="oldPrice">28,000</span><span class="arrow">→</span><span class="new" id="newPrice">25,000</span><span class="unit"> ກີບ</span></div>
+</div>
+
+<div class="divider"></div>
+
+<div class="toolbar adm flex">
+<label class="upload" id="dropZone">
+<div class="uploadrow"><div class="uploadicon">📊</div><div><div class="uploadtitle">ลากไฟล์ Excel มาวางที่นี่ หรือคลิกเพื่อเลือก</div><div class="uploadsub">ระบบนี้อ่านโครงสร้าง Excel ของคุณโดยตรง: Branch · Promotion · จำนวนครั้งที่ใช้ · ราคาหลังลด · Doc Date</div></div></div>
+<input id="excelFile" type="file" accept=".xlsx,.xls,.csv">
+</label>
+<button id="sampleBtn">ทดลองด้วยข้อมูลตัวอย่าง</button>
+</div>
+
+<section class="panel adm">
+<div class="ptitle">🏪 ร้าน / 🏷 โปรโมชัน</div>
+<div class="mrow"><input id="newShop" placeholder="ชื่อร้าน / สาขาใหม่"><button id="addShop">+ เพิ่มร้าน</button></div>
+<div class="chips" id="shopChips"></div>
+<div class="mrow" style="margin-top:0"><button id="addPromo">+ เพิ่มโปรโมชัน</button><button id="delPromo" class="danger">ลบโปรโมชันที่เลือก</button></div>
+<div class="hint" style="margin-top:8px">แก้ชื่อร้านได้ในช่องด้านบน · อัปโหลด Excel จะสร้างร้านและโปรโมชันให้อัตโนมัติ</div>
+</section>
+<section class="panel">
+<div class="ptitle">🔎 เลือกดูตามร้าน / โปรโมชัน / วันที่</div>
+<div class="filters">
+<div><div class="filterlabel">ร้าน / สาขา</div><select id="branchFilter"><option value="ALL">ทุกสาขา</option></select></div>
+<div><div class="filterlabel">โปรโมชัน</div><select id="promoFilter"><option value="ALL">ทุก Promotion</option></select></div>
+<div><div class="filterlabel">วันที่</div><select id="dateFilter"><option value="ALL">ทุกวันที่</option></select></div>
+</div>
+</section>
+<section class="panel adm">
+<div class="ptitle">⚙ รายละเอียดโปรโมชันที่เลือก</div><div class="hint" id="setHint" style="margin-bottom:12px"></div>
+<div class="settings">
+<div class="field"><label>ชื่อร้าน / Brand</label><input id="brandInput" value="AUNGPUNG BAKERY · PROMOTION"></div>
+<div class="field"><label>ชื่อ Promotion</label><input id="titleInput" value="ຜົນການຂາຍ ໂປຣໂມຊັນ"></div>
+<div class="field"><label>Target ต่อวัน (ชิ้น / ร้าน)</label><input id="targetInput" type="number" min="0" value="5"></div>
+<div class="field wide"><label>รายละเอียด</label><textarea id="descInput">นำ Excel Promotion เข้าไป ระบบจะรวมข้อมูลทุก Sheet และประมวลผลเป็น Dashboard อัตโนมัติ</textarea></div>
+<div class="field"><label>ราคาก่อนลด</label><input id="oldInput" type="number" min="0" value="28000"></div>
+<div class="field"><label>ราคาหลังลด</label><input id="newInput" type="number" min="0" value="25000"></div>
+</div>
+</section>
+
+
+
+<section class="cards">
+<div class="card"><div class="label">ยอดขายรวม</div><div class="value" id="totalQty">0</div><div class="sub" id="daysInfo">ชิ้น / 0 วัน</div></div>
+<div class="card"><div class="label">เฉลี่ยต่อวัน</div><div class="value" id="avgQty">0</div><div class="sub" id="avgSub">เป้าหมาย 5 ชิ้น/วัน</div></div>
+<div class="card"><div class="label">วันที่ถึงเป้า</div><div class="value" id="targetDays">0</div><div class="sub" id="targetSub">0% ของทั้งหมด</div></div>
+<div class="card"><div class="label">ยอดขายสุทธิ</div><div class="value" id="revenue">0</div><div class="sub">จากคอลัมน์ ราคาหลังลด</div></div>
+<div class="card"><div class="label">ส่วนลดรวม</div><div class="value" id="discount">0</div><div class="sub">จากคอลัมน์ ส่วนลด</div></div>
+</section>
+
+<section class="panel">
+<div class="ptitle">ยอดขายรายวัน</div>
+<div class="hint" id="chartHint">รอไฟล์ Excel...</div>
+<div class="chartbox"><div class="chart" id="chart"><div class="empty">ยังไม่มีข้อมูล</div></div></div>
+</section>
+
+<div class="two">
+<section class="panel">
+<div class="ptitle">ข้อมูลจาก Excel</div>
+<div class="hint" id="fileStatus">ยังไม่ได้เลือกไฟล์</div>
+<div class="tablewrap" id="preview"></div>
+<div class="actions adm flex"><button id="addRow">+ เพิ่มแถว</button><button id="clearAll" class="danger">ลบข้อมูลทั้งหมด</button><span class="note">แสดง/แก้ไขได้สูงสุด 50 แถวตาม Filter</span></div>
+</section>
+<section class="panel">
+<div class="ptitle">สรุปผล</div>
+<div class="row"><span>วันที่ขายดีที่สุด</span><strong id="bestDay">-</strong></div>
+<div class="row"><span>ยอดสูงสุด / วัน</span><strong id="bestQty">0</strong></div>
+<div class="row"><span>วันที่ต่ำกว่าเป้า</span><strong id="lowDays">0</strong></div>
+<div class="row"><span>ทำได้ตามเป้า</span><strong id="rate">0%</strong></div>
+<div class="row"><span>จำนวนรายการขาย</span><strong id="records">0</strong></div>
+</section>
+</div>
+</div>
+
+
+<script id="state" type="application/json">{"published":true,"rows":[["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-10"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",2,56000,6000,50000,"2026-09-13"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-17"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-18"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-18"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-20"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-21"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-21"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-21"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-22"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-22"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",5,125000,15000,110000,"2026-09-23"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-23"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-24"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-24"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-25"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-25"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-26"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-27"],["Pakse","43","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-27"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",2,56000,6000,50000,"2026-09-06"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-06"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-08"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-09"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-10"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-11"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-12"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-12"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-16"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",2,56000,6000,50000,"2026-09-16"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-16"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-17"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-17"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-17"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-19"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-19"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-19"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",4,112000,12000,100000,"2026-09-21"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-21"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",2,56000,6000,50000,"2026-09-21"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",2,56000,6000,50000,"2026-09-21"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-22"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-22"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-22"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-23"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-24"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-24"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-24"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-25"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-26"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-27"],["AungPung Bakery - ໜ້າຮ້ານ Super","18","ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ",1,28000,3000,25000,"2026-09-27"]],"brand":"AUNGPUNG BAKERY · PROMOTION","promos":[{"id":"1","title":"ລົດລາຄາ","desc":"","oldPrice":0,"newPrice":0,"target":5},{"id":"43","title":"ຜົນການຂາຍ ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ","desc":"","oldPrice":28000,"newPrice":25000,"target":5},{"id":"18","title":"ຜົນການຂາຍ ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ ( 1*1*1 )  1 ອັນ ຫຼຸດ 3,000.ກີບ","desc":"","oldPrice":28000,"newPrice":25000,"target":5}],"shops":["Pakse","AungPung Bakery - ໜ້າຮ້ານ Super"]}</script>
+<script>const SRC='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+const KEY='promo_dash_state_v1';
+let STATE=JSON.parse(document.getElementById('state').textContent);
+try{const ls=localStorage.getItem(KEY);if(ls){const L=JSON.parse(ls);if((L.savedAt||0)>=(STATE.savedAt||0))STATE=L}}catch(e){}
+STATE.published=true;
+const $=id=>document.getElementById(id);
+const fmt=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(Number(n)||0);
+const money=n=>fmt(n)+' ກີບ';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const opt=(v,t,sel)=>`<option value="${esc(v)}"${sel?' selected':''}>${esc(t)}</option>`;
+const short=t=>{t=String(t||'');return t.length>38?t.slice(0,38)+'…':t};
+let allRows=(STATE.rows||[]).map(a=>({branch:String(a[0]),promoId:String(a[1]),promoName:a[2],qty:a[3],before:a[4],discount:a[5],revenue:a[6],date:a[7]}));
+let isAdmin=false,canAdmin=false;
+if(!STATE.promos){
+ const c=STATE.cfg||{};STATE.brand=c.brand||'';
+ const ids=[...new Set(allRows.map(r=>r.promoId).filter(Boolean))];if(!ids.length)ids.push('1');
+ STATE.promos=ids.map((id,i)=>{const r=allRows.find(x=>x.promoId===id);
+  return{id,title:i===0?(c.title||''):(r&&r.promoName?'ຜົນການຂາຍ '+r.promoName:'โปรโมชัน '+id),desc:i===0?(c.desc||''):'',oldPrice:c.oldPrice||0,newPrice:c.newPrice||0,target:c.target??5}});
+ STATE.shops=[...new Set(allRows.map(r=>r.branch).filter(Boolean))];delete STATE.cfg;
+}
+const thaiMonths={'มกราคม':0,'กุมภาพันธ์':1,'มีนาคม':2,'เมษายน':3,'พฤษภาคม':4,'มิถุนายน':5,'กรกฎาคม':6,'สิงหาคม':7,'กันยายน':8,'ตุลาคม':9,'พฤศจิกายน':10,'ธันวาคม':11};
+const U=(y,m,d)=>new Date(Date.UTC(y,m,d));
+function parseDocDate(v){
+ if(v instanceof Date&&!isNaN(v))return U(v.getFullYear(),v.getMonth(),v.getDate());
+ if(typeof v==='number'&&window.XLSX){const d=XLSX.SSF.parse_date_code(v);if(d)return U(d.y,d.m-1,d.d)}
+ const s=String(v??'').trim();let m=s.match(/(\d{1,2})\s+([^\s]+)\s+(\d{4})/);
+ if(m){const mo=thaiMonths[m[2]];if(mo!==undefined){let y=+m[3];if(y>2400)y-=543;return U(y,mo,+m[1])}}
+ m=s.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})/);
+ if(m)return U(+m[1],+m[2]-1,+m[3]);
+ m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+ if(m){let y=+m[3];if(y<100)y+=2000;if(y>2400)y-=543;return U(y,+m[2]-1,+m[1])}
+ const d=new Date(s);return isNaN(d)?null:U(d.getFullYear(),d.getMonth(),d.getDate());
+}
+const dateKey=d=>d.toISOString().slice(0,10);
+const toObj=s=>{const d=new Date(s+'T00:00:00Z');return isNaN(d)?null:d};
+const dateLabel=d=>String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0');
+const curPromo=()=>{const v=$('promoFilter').value;return v==='ALL'?null:STATE.promos.find(p=>p.id===v)||null};
+
+function applyCfg(){
+ const p=curPromo(),sh=$('branchFilter').value;
+ $('brand').textContent=(STATE.brand||'PROMOTION DASHBOARD')+(sh!=='ALL'&&sh?' · '+sh:'');
+ const t=p?(p.title||'โปรโมชัน '+p.id):'ผลการขายโปรโมชันทั้งหมด';
+ $('title').textContent=t;
+ $('desc').textContent=p?(p.desc||''):`${STATE.promos.length} โปรโมชัน · ${STATE.shops.length} ร้าน — เลือกร้านหรือโปรโมชันด้านล่างเพื่อดูรายละเอียด`;
+ document.querySelector('.price').style.display=p?'':'none';
+ if(p){$('oldPrice').textContent=fmt(p.oldPrice);$('newPrice').textContent=fmt(p.newPrice)}
+ document.title=t;
+}
+function fillInputs(){
+ const p=curPromo();$('brandInput').value=STATE.brand||'';
+ ['titleInput','descInput','targetInput','oldInput','newInput'].forEach(i=>$(i).disabled=!p);
+ $('titleInput').value=p?p.title:'';$('descInput').value=p?p.desc:'';$('targetInput').value=p?p.target:'';
+ $('oldInput').value=p?p.oldPrice:'';$('newInput').value=p?p.newPrice:'';
+ $('setHint').textContent=p?`กำลังแก้ไข: โปรโมชัน ${p.id}`:'เลือก "โปรโมชัน" ด้านบนเพื่อแก้ไขรายละเอียดของโปรโมชันนั้น (ชื่อร้านแก้ได้เสมอ)';
+}
+function readCfg(){
+ STATE.brand=$('brandInput').value;const p=curPromo();if(!p)return;
+ p.title=$('titleInput').value;p.desc=$('descInput').value;p.target=Math.max(0,Number($('targetInput').value)||0);
+ p.oldPrice=Number($('oldInput').value)||0;p.newPrice=Number($('newInput').value)||0;
+}
+function setupFilters(){
+ const keep=['branchFilter','promoFilter','dateFilter'].map(i=>$(i).value);
+ const dt=[...new Set(allRows.map(r=>r.date).filter(Boolean))].sort();
+ $('branchFilter').innerHTML=opt('ALL','ทุกร้าน')+STATE.shops.map(x=>opt(x,x)).join('');
+ $('promoFilter').innerHTML=opt('ALL','ทุกโปรโมชัน')+STATE.promos.map(p=>opt(p.id,p.id+' · '+short(p.title))).join('');
+ $('dateFilter').innerHTML=opt('ALL','ทุกวันที่')+dt.map(x=>opt(x,x)).join('');
+ ['branchFilter','promoFilter','dateFilter'].forEach((id,i)=>{if([...$(id).options].some(o=>o.value===keep[i]))$(id).value=keep[i]});
+}
+function getFiltered(){
+ const b=$('branchFilter').value,p=$('promoFilter').value,d=$('dateFilter').value;
+ return allRows.filter(r=>(b==='ALL'||r.branch===b)&&(p==='ALL'||r.promoId===p)&&(d==='ALL'||r.date===d));
+}
+function render(){
+ const rows=getFiltered();
+ const pairs=new Map();rows.forEach(r=>pairs.set(r.branch+'\u0001'+r.promoId,r.promoId));
+ let target=0;pairs.forEach(pid=>{const p=STATE.promos.find(x=>x.id===pid);target+=p?Number(p.target)||0:0});
+ const p0=curPromo();if(!pairs.size&&p0)target=Number(p0.target)||0;
+ const by=new Map();
+ rows.forEach(r=>{const o=toObj(r.date);if(!o)return;if(!by.has(r.date))by.set(r.date,{date:o,qty:0});by.get(r.date).qty+=Number(r.qty)||0});
+ const data=[...by.values()].sort((a,b)=>a.date-b.date);
+ const sum=k=>rows.reduce((s,r)=>s+(Number(r[k])||0),0);
+ const tq=sum('qty'),days=data.length,avg=days?tq/days:0,hit=data.filter(x=>x.qty>=target).length;
+ const best=data.reduce((a,b)=>!a||b.qty>a.qty?b:a,null);
+ $('totalQty').textContent=fmt(tq);$('daysInfo').textContent=`ชิ้น / ${days} วัน`;
+ $('avgQty').textContent=fmt(avg);$('avgSub').textContent=`เป้าหมาย ${fmt(target)} ชิ้น/วัน`;
+ $('targetDays').textContent=fmt(hit);$('targetSub').textContent=`${days?fmt(hit/days*100):0}% ของทั้งหมด`;
+ $('revenue').textContent=money(sum('revenue'));$('discount').textContent=money(sum('discount'));
+ $('bestDay').textContent=best?dateLabel(best.date):'-';$('bestQty').textContent=fmt(best?.qty||0);
+ $('lowDays').textContent=fmt(data.filter(x=>x.qty<target).length);$('rate').textContent=(days?fmt(hit/days*100):0)+'%';
+ $('records').textContent=fmt(rows.length);
+ drawChart(data,target);
+ $('chartHint').textContent=days?`ข้อมูล ${days} วัน · ${rows.length} รายการ · เส้นประคือ Target ${fmt(target)} ชิ้น/วัน (รวมทุกร้าน/โปรโมชันที่เลือก)`:'ยังไม่มีข้อมูล';
+}
+function drawChart(data,target){
+ const el=$('chart');
+ if(!data.length){el.innerHTML='<div class="empty">ไม่มีข้อมูล</div>';return}
+ const W=Math.max(760,data.length*42),H=320,L=45,R=25,T=18,B=48,IW=W-L-R,IH=H-T-B,max=Math.max(target,...data.map(x=>x.qty),1);
+ let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+ for(let i=0;i<=4;i++){const y=T+IH-IH*i/4;s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text class="axis" x="${L-8}" y="${y+4}" text-anchor="end">${Math.round(max*i/4)}</text>`}
+ const bw=Math.max(9,Math.min(31,IW/data.length*.58));
+ data.forEach((x,i)=>{const cx=L+(i+.5)*IW/data.length,bh=x.qty/max*IH;
+  s+=`<rect class="bar" x="${cx-bw/2}" y="${T+IH-bh}" width="${bw}" height="${bh}" rx="4"><title>${dateLabel(x.date)}: ${fmt(x.qty)} ชิ้น</title></rect><text class="axis" x="${cx}" y="${H-14}" text-anchor="middle">${dateLabel(x.date)}</text>`});
+ const ty=T+IH-target/max*IH;
+ s+=`<line class="target" x1="${L}" x2="${W-R}" y1="${ty}" y2="${ty}"/><text class="axis" x="${W-R}" y="${ty-7}" text-anchor="end">Target ${fmt(target)}</text></svg>`;
+ el.innerHTML=s;
+}
+function renderPreview(){
+ const sh=getFiltered().slice(0,isAdmin?50:30);
+ const head='<th>ร้าน</th><th>โปรโมชัน</th><th>จำนวน</th><th>ก่อนลด</th><th>ส่วนลด</th><th>หลังลด</th><th>วันที่</th>';
+ let h=`<table class="table"><thead><tr>${head}${isAdmin?'<th></th>':''}</tr></thead><tbody>`;
+ if(!isAdmin)sh.forEach(r=>{h+=`<tr><td>${esc(r.branch)}</td><td>${esc(r.promoId)}</td><td>${fmt(r.qty)}</td><td>${money(r.before)}</td><td>${money(r.discount)}</td><td>${money(r.revenue)}</td><td>${esc(r.date)}</td></tr>`});
+ else sh.forEach((r,i)=>{
+  const t=k=>`<td><input data-i="${i}" data-k="${k}" value="${esc(r[k])}"></td>`;
+  const shops=STATE.shops.includes(r.branch)?STATE.shops:[...STATE.shops,r.branch];
+  const sel=(k,list,val,lab)=>`<td><select data-i="${i}" data-k="${k}">${list.map(x=>opt(x,lab?lab(x):x,x===val)).join('')}</select></td>`;
+  h+=`<tr>${sel('branch',shops,r.branch)}${sel('promoId',STATE.promos.map(p=>p.id),r.promoId,id=>id+' · '+short((STATE.promos.find(p=>p.id===id)||{}).title))}${t('qty')}${t('before')}${t('discount')}${t('revenue')}${t('date')}<td><button data-del="${i}" class="danger">ลบ</button></td></tr>`});
+ $('preview').innerHTML=h+'</tbody></table>';
+ if(isAdmin){
+  $('preview').querySelectorAll('input,select').forEach(inp=>inp.addEventListener('change',()=>{
+   const r=sh[+inp.dataset.i],k=inp.dataset.k;r[k]=['branch','promoId','date'].includes(k)?inp.value:(Number(inp.value)||0);
+   setupFilters();renderAll();dirty()}));
+  $('preview').querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{
+   allRows.splice(allRows.indexOf(sh[+b.dataset.del]),1);setupFilters();renderAll();dirty()}));
+ }
+}
+function renderAll(){render();renderPreview()}
+function dirty(){$('saveMsg').textContent='● มีการแก้ไขที่ยังไม่บันทึก'}
+function renderChips(){
+ $('shopChips').innerHTML=STATE.shops.map((s,i)=>`<div class="chip"><input data-si="${i}" value="${esc(s)}"><button data-sd="${i}" class="danger">×</button></div>`).join('')||'<span class="hint">ยังไม่มีร้าน</span>';
+ $('shopChips').querySelectorAll('input').forEach(inp=>inp.addEventListener('change',()=>{
+  const i=+inp.dataset.si,old=STATE.shops[i],nw=inp.value.trim();
+  if(!nw||(nw!==old&&STATE.shops.includes(nw))){renderChips();return}
+  const was=$('branchFilter').value===old;
+  allRows.forEach(r=>{if(r.branch===old)r.branch=nw});STATE.shops[i]=nw;
+  setupFilters();if(was)$('branchFilter').value=nw;applyCfg();renderAll();dirty()}));
+ $('shopChips').querySelectorAll('[data-sd]').forEach(b=>b.addEventListener('click',()=>arm(b,'ลบ? กดซ้ำ',()=>{
+  const old=STATE.shops[+b.dataset.sd];STATE.shops.splice(+b.dataset.sd,1);allRows=allRows.filter(r=>r.branch!==old);
+  setupFilters();renderChips();applyCfg();renderAll();dirty()})));
+}
+function mergeRows(out){
+ const keys=new Set(out.map(r=>r.branch+'\u0001'+r.promoId));
+ allRows=allRows.filter(r=>!keys.has(r.branch+'\u0001'+r.promoId)).concat(out);
+ out.forEach(r=>{
+  if(!STATE.shops.includes(r.branch))STATE.shops.push(r.branch);
+  if(!STATE.promos.find(p=>p.id===r.promoId)){const q=Math.max(r.qty,1);
+   STATE.promos.push({id:r.promoId,title:r.promoName?'ຜົນການຂາຍ '+r.promoName:'โปรโมชัน '+r.promoId,desc:'',oldPrice:Math.round(r.before/q),newPrice:Math.round(r.revenue/q),target:5})}});
+ setupFilters();renderChips();fillInputs();applyCfg();renderAll();dirty();
+}
+function readExcel(file){
+ if(!window.XLSX){$('fileStatus').innerHTML='<span class="error">โหลดตัวอ่าน Excel ไม่สำเร็จ</span>';return}
+ $('fileStatus').textContent='กำลังอ่าน Excel...';
+ const rd=new FileReader();
+ rd.onload=e=>{try{
+  const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true}),out=[],skipped=[];
+  wb.SheetNames.forEach(sn=>{
+   const json=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});if(!json.length)return;
+   const hs=Object.keys(json[0]);
+   const find=a=>hs.find(h=>a.includes(String(h).trim()))||hs.find(h=>a.some(x=>String(h).toLowerCase().includes(x.toLowerCase())));
+   const bc=find(['Branch (สาขา)','Branch']),pi=find(['Promotion ID','PromotionID']),pn=find(['Promotion Name','PromotionName']),
+    qc=find(['จำนวนครั้งที่ใช้','จำนวน','Qty','Quantity']),bf=find(['ราคาขายก่อนลด','ราคาก่อนลด']),
+    dc=find(['สวนลด','ส่วนลด','Discount']),ac=find(['ราคาหลังลด','ราคาขายหลังลด']),dt=find(['Doc Date','วันที่','Date']);
+   if(!qc||!dt){skipped.push(sn);return}
+   json.forEach(r=>{const d=parseDocDate(r[dt]);if(!d)return;
+    out.push({branch:String(r[bc]||'').trim()||'ไม่ระบุร้าน',promoId:String(r[pi]||'').trim()||'1',promoName:String(r[pn]??''),qty:Number(r[qc])||0,before:Number(r[bf])||0,discount:Number(r[dc])||0,revenue:Number(r[ac])||0,date:dateKey(d)})})});
+  if(!out.length)throw new Error(skipped.length?`ไม่พบ Column จำนวนครั้งที่ใช้ / Doc Date ใน Sheet: ${skipped.join(', ')}`:'ไม่พบข้อมูลที่มีวันที่และจำนวนขาย');
+  mergeRows(out);
+  const ns=new Set(out.map(r=>r.branch)).size,np=new Set(out.map(r=>r.promoId)).size;
+  $('fileStatus').innerHTML=`<strong>${esc(file.name)}</strong> · นำเข้า ${out.length} รายการ · ${ns} ร้าน · ${np} โปรโมชัน${skipped.length?' · ข้าม Sheet: '+esc(skipped.join(', ')):''} <div class="status">✓ เพิ่มเข้าข้อมูลเดิม (ร้าน+โปรโมชันที่ซ้ำกันจะถูกแทนที่) — กด "บันทึกในเครื่อง" หรือ "ดาวน์โหลด HTML"</div>`;
+ }catch(err){$('fileStatus').innerHTML='<span class="error">⚠ '+esc(err.message)+'</span>'}};
+ rd.readAsArrayBuffer(file);
+}
+function snapshot(){
+ readCfg();STATE.published=true;STATE.savedAt=Date.now();
+ STATE.rows=allRows.map(r=>[r.branch,r.promoId,r.promoName,r.qty,r.before,r.discount,r.revenue,r.date]);
+ return JSON.stringify(STATE);
+}
+function persist(){
+ try{localStorage.setItem(KEY,snapshot());$('saveMsg').textContent='✓ บันทึกในเครื่อง/เบราว์เซอร์นี้แล้ว'}
+ catch(e){$('saveMsg').textContent='⚠ บันทึกในเครื่องไม่ได้ — ใช้ปุ่ม "ดาวน์โหลด HTML" แทน'}
+}
+function downloadHtml(){
+ const json=snapshot().replace(/</g,'\\u003c');
+ const html=SRC.replace(/(<script id="state" type="application\/json">)[\s\S]*?(<\/script>)/,(m,a,b)=>a+json+b);
+ const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+ l.download='promotion_dashboard.html';document.body.appendChild(l);l.click();l.remove();
+ setTimeout(()=>URL.revokeObjectURL(l.href),2000);
+ $('saveMsg').textContent='✓ ดาวน์โหลดไฟล์ที่มีข้อมูลล่าสุดแล้ว — ส่งไฟล์นี้ให้คนอื่นแก้ไขต่อได้';
+}
+function setMode(){document.body.classList.toggle('admin',isAdmin);document.body.classList.remove('private');renderPreview()}
+let armed=null;
+function arm(btn,label,fn){
+ if(armed&&armed.btn===btn){clearTimeout(armed.t);const f=armed.fn;btn.textContent=armed.orig;armed=null;f();return}
+ if(armed){clearTimeout(armed.t);armed.btn.textContent=armed.orig}
+ armed={btn,fn,orig:btn.textContent,t:setTimeout(()=>{btn.textContent=armed.orig;armed=null},4000)};
+ btn.textContent=label;
+}
+$('excelFile').addEventListener('change',e=>{if(e.target.files[0])readExcel(e.target.files[0]);e.target.value=''});
+const dz=$('dropZone');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.style.borderColor='var(--accent)'}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.style.borderColor=''}));
+dz.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)readExcel(f)});
+['brandInput','titleInput','descInput','targetInput','oldInput','newInput'].forEach(id=>$(id).addEventListener('input',()=>{readCfg();applyCfg();setupFilters();render();dirty()}));
+['branchFilter','promoFilter','dateFilter'].forEach(id=>$(id).addEventListener('change',()=>{
+ try{sessionStorage.setItem('sel',JSON.stringify(['branchFilter','promoFilter','dateFilter'].map(i=>$(i).value)))}catch(e){}
+ fillInputs();applyCfg();renderAll()}));
+$('sampleBtn').addEventListener('click',()=>{
+ const A='AungPung Bakery - ໜ້າຮ້ານ Super',B='AungPung Bakery - ສາຂາ 2',out=[];
+ const mk=(br,id,name,pr,disc,v)=>v.forEach((q,i)=>out.push({branch:br,promoId:id,promoName:name,qty:q,before:q*(pr+disc),discount:q*disc,revenue:q*pr,date:dateKey(U(2026,8,6+i))}));
+ mk(A,'18','ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ',25000,3000,[3,1,1,1,1,2,4,3,3,9,3,1,3,1,1,2,1,2,1,2,1,2,1,1,2,4]);
+ mk(B,'18','ຊື້ AP ເຂົ້າໜົມປັງກອບໜ້າເນີຍນໍ້າຕານ',25000,3000,[1,2,1,0,2,1,3,2,1,4,2,1,1,2,0,1,2,1,1,3]);
+ mk(A,'19','ໂປຣຕົວຢ່າງ 2',18000,2000,[2,3,1,2,4,2,1,3,2,2,5,1]);
+ mergeRows(out);$('fileStatus').innerHTML='<strong>ข้อมูลตัวอย่าง</strong> · 2 ร้าน · 2 โปรโมชัน';
+});
+$('addRow').addEventListener('click',()=>{
+ if(!STATE.shops.length||!STATE.promos.length){$('fileStatus').innerHTML='<span class="error">⚠ เพิ่มร้านและโปรโมชันก่อน</span>';return}
+ const b=$('branchFilter').value,p=$('promoFilter').value;
+ allRows.unshift({branch:b==='ALL'?STATE.shops[0]:b,promoId:p==='ALL'?STATE.promos[0].id:p,promoName:'',qty:1,before:0,discount:0,revenue:0,date:dateKey(new Date())});
+ setupFilters();renderAll();dirty();
+});
+$('clearAll').addEventListener('click',()=>arm($('clearAll'),'กดอีกครั้งเพื่อยืนยันลบ',()=>{allRows=[];setupFilters();renderAll();dirty()}));
+$('addShop').addEventListener('click',()=>{
+ const n=$('newShop').value.trim();if(!n||STATE.shops.includes(n))return;
+ STATE.shops.push(n);$('newShop').value='';setupFilters();renderChips();applyCfg();dirty();
+});
+$('addPromo').addEventListener('click',()=>{
+ let n=Math.max(0,...STATE.promos.map(p=>parseInt(p.id)||0))+1;while(STATE.promos.some(p=>p.id===String(n)))n++;
+ STATE.promos.push({id:String(n),title:'โปรโมชันใหม่',desc:'',oldPrice:0,newPrice:0,target:5});
+ setupFilters();$('promoFilter').value=String(n);fillInputs();applyCfg();renderAll();dirty();$('titleInput').select();
+});
+$('delPromo').addEventListener('click',()=>{
+ const p=curPromo();if(!p){$('setHint').textContent='⚠ เลือกโปรโมชันที่จะลบจากรายการ "โปรโมชัน" ก่อน';return}
+ arm($('delPromo'),'ลบ '+p.id+' และข้อมูลของมัน? กดซ้ำ',()=>{
+  STATE.promos=STATE.promos.filter(x=>x!==p);allRows=allRows.filter(r=>r.promoId!==p.id);
+  setupFilters();$('promoFilter').value='ALL';fillInputs();applyCfg();renderAll();dirty()});
+});
+$('saveBtn').addEventListener('click',persist);
+$('pubBtn').addEventListener('click',downloadHtml);
+function updGate(){$('gate').textContent=canAdmin?'← กลับหลังบ้าน':'🔐 หลังบ้าน'}
+async function sha(s){
+ const t='promo|'+s;
+ try{if(window.crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}}catch(e){}
+ let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
+ h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+ return 'f'+(4294967296*(2097151&h2)+(h1>>>0)).toString(16);
+}
+let lmMode='';
+function openModal(mode){
+ lmMode=mode;const setup=mode!=='login';
+ $('lmTitle').textContent=mode==='login'?'🔐 เข้าสู่หลังบ้าน':mode==='setup'?'ตั้งรหัสผ่านครั้งแรก':'เปลี่ยนรหัสผ่าน';
+ $('lmHint').textContent=mode==='login'?'กรอกรหัสผ่านเพื่อแก้ไขข้อมูล':'ตั้งรหัสผ่านใหม่ (อย่างน้อย 4 ตัวอักษร)';
+ $('lmPass2').style.display=setup?'block':'none';
+ $('lmPass').value=$('lmPass2').value='';$('lmErr').textContent='';
+ $('loginModal').classList.add('show');setTimeout(()=>$('lmPass').focus(),30);
+}
+function closeModal(){$('loginModal').classList.remove('show')}
+function enterAdmin(){try{sessionStorage.setItem('adm','1')}catch(e){}closeModal();isAdmin=true;setMode();renderAll()}
+async function submitModal(){
+ const a=$('lmPass').value,err=m=>{$('lmErr').textContent=m};
+ if(lmMode==='login'){
+  if(await sha(a)===STATE.pass)enterAdmin();else{err('รหัสผ่านไม่ถูกต้อง');$('lmPass').select()}return;
+ }
+ if(a.length<4)return err('รหัสผ่านสั้นเกินไป');
+ if(a!==$('lmPass2').value)return err('รหัสผ่านไม่ตรงกัน');
+ STATE.pass=await sha(a);persist();
+ if(lmMode==='setup')enterAdmin();else{closeModal();$('saveMsg').textContent='✓ เปลี่ยนรหัสผ่านแล้ว — ดาวน์โหลด HTML ใหม่เพื่อแจกไฟล์ที่มีรหัสนี้'}
+}
+$('gate').addEventListener('click',()=>{
+ let ok=false;try{ok=sessionStorage.getItem('adm')==='1'}catch(e){}
+ if(ok&&STATE.pass){enterAdmin();return}
+ openModal(STATE.pass?'login':'setup');
+});
+$('lmOk').addEventListener('click',submitModal);
+$('lmCancel').addEventListener('click',closeModal);
+['lmPass','lmPass2'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')submitModal()}));
+$('pwBtn').addEventListener('click',()=>openModal('change'));
+$('logoutBtn').addEventListener('click',()=>{try{sessionStorage.removeItem('adm')}catch(e){}isAdmin=false;setMode();renderAll()});
+$('viewBtn').addEventListener('click',()=>{isAdmin=false;updGate();setMode();renderAll()});
+$('resetBtn').addEventListener('click',()=>arm($('resetBtn'),'ล้างข้อมูลที่บันทึกในเครื่อง? กดซ้ำ',()=>{try{localStorage.removeItem(KEY)}catch(e){}location.reload()}));
+setupFilters();
+try{const sel=JSON.parse(sessionStorage.getItem('sel')||'null');if(sel)['branchFilter','promoFilter','dateFilter'].forEach((id,i)=>{if([...$(id).options].some(o=>o.value===sel[i]))$(id).value=sel[i]})}catch(e){}
+renderChips();fillInputs();applyCfg();renderAll();setMode();
+canAdmin=true;isAdmin=false;updGate();setMode();renderAll();
+</script></body></html>
